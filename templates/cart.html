@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4"><i class="fas fa-shopping-cart"></i> Tu Carrito</h2>
+
+    {% if is_empty %}
+        <div class="alert alert-info text-center py-5">
+            <h4><i class="fas fa-shopping-basket"></i> Tu carrito está vacío</h4>
+            <p>Parece que no has agregado nada aún.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Ir a comprar</a>
+        </div>
+    {% else %}
+        <!-- INICIO FORMULARIO PRINCIPAL (Envuelve todo para mandar el pago) -->
+        <form action="{{ url_for('checkout') }}" method="POST">
+            
+            <div class="row">
+                <!-- COLUMNA IZQUIERDA: LISTA DE PRODUCTOS -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-header bg-white fw-bold">Items en tu carrito</div>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-end">Precio Unit.</th>
+                                        <th class="text-center">Cant.</th>
+                                        <th class="text-end">Subtotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{ url_for('static', filename='img/' + item.product.imagen) }}" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;" class="rounded me-3">
+                                                <div>
+                                                    <span class="fw-bold d-block">{{ item.product.nombre }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- LÓGICA DE ESTADO (Oculta cantidad exacta) -->
+                                            {% if item.product.stock >= item.cantidad %}
+                                                <span class="badge bg-success">Disponible</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Stock Insuficiente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">${{ item.product.precio }}</td>
+                                        <td class="text-center">{{ item.cantidad }}</td>
+                                        <td class="text-end fw-bold">${{ item.subtotal }}</td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('remove_from_cart', product_id=item.product.id) }}" 
+                                               class="text-danger" title="Eliminar">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: RESUMEN Y PAGO -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white">Resumen de Orden</div>
+                        <div class="card-body">
+                            
+                            <!-- DESGLOSE DE PRECIOS -->
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Subtotal</span>
+                                <span>${{ total }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Descuentos</span>
+                                <span class="text-success">-$0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Envío</span>
+                                <span class="text-success">Gratis</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-4">
+                                <span class="h5">Total a Pagar</span>
+                                <span class="h4 fw-bold">${{ total }}</span>
+                            </div>
+
+                            <!-- SELECCIÓN DE MÉTODO DE PAGO -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-wallet"></i> Método de Pago</label>
+                                {% if payment_methods %}
+                                    <select name="payment_method_id" class="form-select" required>
+                                        <option value="" selected disabled>Selecciona una tarjeta...</option>
+                                        {% for pm in payment_methods %}
+                                            <option value="{{ pm.id }}">
+                                                {{ pm.card_type }} (Termina en {{ pm.masked_number[-4:] }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text mt-2">
+                                        <small><a href="{{ url_for('profile') }}#payment-methods">Administrar tarjetas</a></small>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning small mb-0">
+                                        No tienes tarjetas guardadas.
+                                        <a href="{{ url_for('profile') }}#payment-methods" class="alert-link">Agregar una aquí</a>.
+                                    </div>
+                                    <!-- Input oculto para que falle la validación si trata de enviar -->
+                                    <input type="hidden" name="payment_method_id" required>
+                                {% endif %}
+                            </div>
+
+                            <!-- BOTÓN PAGAR -->
+                            <button type="submit" class="btn btn-success w-100 btn-lg shadow-sm" 
+                                    {% if not payment_methods %}disabled{% endif %}>
+                                <i class="fas fa-lock me-2"></i> Confirmar y Pagar
+                            </button>
+                            
+                            <div class="text-center mt-3">
+                                <small class="text-muted"><i class="fas fa-shield-alt"></i> Pagos 100% Seguros</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('index') }}" class="text-decoration-none text-secondary">Seguir comprando</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

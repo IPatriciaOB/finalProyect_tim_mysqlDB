@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow border-0">
+        <div class="row g-0">
+            <!-- COLUMNA IMAGEN -->
+            <div class="col-md-6 bg-light d-flex align-items-center justify-content-center">
+                <img src="{{ url_for('static', filename='img/' + product.imagen) }}" 
+                     alt="{{ product.nombre }}" 
+                     class="img-fluid rounded-start p-4" 
+                     style="max-height: 500px; object-fit: contain;">
+            </div>
+            
+            <!-- COLUMNA DETALLES -->
+            <div class="col-md-6">
+                <div class="card-body p-5">
+                    <h5 class="text-muted text-uppercase mb-2">Instrumentos</h5>
+                    <h1 class="fw-bold mb-3">{{ product.nombre }}</h1>
+                    
+                    <h2 class="text-primary mb-4 fw-bold">${{ product.precio }}</h2>
+                    
+                    <p class="card-text lead text-secondary mb-4">
+                        {{ product.descripcion }}
+                    </p>
+                    
+                    <hr>
+
+                    <!-- LÓGICA DE COMPRA -->
+                    {% if product.stock > 0 %}
+                        {% if current_user.is_authenticated %}
+                            <!-- FORMULARIO PARA USUARIOS LOGUEADOS -->
+                            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
+                                <div class="row align-items-end g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Cantidad:</label>
+                                        <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ product.stock }}">
+                                        <div class="form-text">Stock: {{ product.stock }}</div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <button type="submit" class="btn btn-dark w-100 btn-lg">
+                                            <i class="fas fa-cart-plus me-2"></i> Comprar Ahora
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        {% else %}
+                            <!-- BOTÓN PARA INVITADOS (Lleva al Login) -->
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Debes iniciar sesión para comprar.
+                            </div>
+                            <a href="{{ url_for('login', next=url_for('product_detail', id=product.id)) }}" class="btn btn-warning btn-lg w-100">
+                                Iniciar Sesión para Comprar
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <!-- SI NO HAY STOCK -->
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> Producto Agotado
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('index') }}" class="text-decoration-none text-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al catálogo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

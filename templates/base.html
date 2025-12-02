@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melodías - Principal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+        <!-- NUEVA FUENTE PARA EL LOGO -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilo personalizado para el Logo */
+        .musical-brand {
+            font-family: 'Dancing Script', cursive; /* Fuente artística */
+            font-size: 2.8rem; /* Tamaño grande */
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para resaltar */
+            transition: transform 0.3s ease;
+        }
+        
+        .musical-brand:hover {
+            transform: scale(1.05); /* Efecto zoom suave al pasar el mouse */
+            color: #ffc107 !important; /* Cambia a amarillo al pasar mouse */
+        }
+    </style>
+
+</head>
+<body class="d-flex flex-column min-vh-100">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+<!-- Si es admin o empleado, va al Dashboard. Si es cliente/invitado, va al inicio -->
+<a class="navbar-brand musical-brand" href="{{ url_for('admin_dashboard') if current_user.role in ['admin', 'empleado'] else '/' }}">
+    Melodías del pasado
+</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+<ul class="navbar-nav ms-auto align-items-center">
+    
+    <!-- LÓGICA: Ocultar para Admin y Empleado -->
+    {% if not current_user.is_authenticated or current_user.role == 'cliente' %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">Acerca de nosotros</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('help') }}">Ayuda</a></li>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+        
+        <!-- LÓGICA 2: CAMBIAR TEXTO DEL PANEL -->
+        <!-- Si es Admin o Empleado, mostramos el enlace al panel -->
+        {% if current_user.role in ['admin', 'empleado'] %}
+             <li class="nav-item">
+                 <a class="nav-link text-info" href="{{ url_for('admin_dashboard') }}">
+                    {% if current_user.role == 'empleado' %}
+                        Panel de Servicio  <!-- Texto para Empleado -->
+                    {% else %}
+                        Panel Admin        <!-- Texto para Admin -->
+                    {% endif %}
+                 </a>
+             </li>
+        {% endif %}
+        
+        <!-- LÓGICA 3: QUITAR EMOJI/ICONO AL EMPLEADO -->
+        <li class="nav-item">
+            <a class="nav-link text-warning fw-bold" href="{{ url_for('profile') }}">
+                {% if current_user.role == 'empleado' %}
+                    <!-- Solo texto para empleado -->
+                    Hola, {{ current_user.nombre|upper }}
+                {% else %}
+                    <!-- Con icono para Admin y Cliente -->
+                    <i class="fas fa-user-shield" ></i> Hola, {{ current_user.nombre|upper }}
+                {% endif %}
+            </a>
+        </li>
+        
+        <!-- BOTÓN SALIR -->
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Salir</a></li>
+        
+        <!-- CARRITO (Solo visible para Clientes) -->
+        {% if current_user.role == 'cliente' %}
+        <li class="nav-item ms-2">
+            <a class="btn btn-outline-light position-relative" href="{{ url_for('view_cart') }}">
+                <i class="fas fa-shopping-cart"></i>
+                {% if session.get('cart') %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ session.get('cart')|length }}
+                    </span>
+                {% endif %}
+            </a>
+        </li>
+        {% endif %}
+        
+    {% else %}
+        <!-- OPCIÓN PARA INVITADOS (NO LOGUEADOS) -->
+        <li class="nav-item"><a class="nav-link btn btn-outline-light ms-2 border-0" href="{{ url_for('login') }}">Iniciar sesión</a></li>
+    {% endif %}
+</ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container my-4">
+        {% block content %}{% endblock %}
+    </div>
+
+<!-- FOOTER  -->
+<footer class="bg-dark text-white pt-5 pb-3 mt-auto">
+    <div class="container">
+        <div class="row">
+            <!-- Columna 1: Info Empresa -->
+            <div class="col-md-4 mb-4">
+                <!-- Cambio de nombre -->
+                <h5 class="musical-brand text-warning mb-3" style="font-size: 2.5rem;">Melodías del pasado</h5>
+                <p class="small text-secondary">
+                    Tu tienda de confianza para encontrar el instrumento perfecto. Pasión por la música desde 2025.
+                </p>
+                <!-- Cambio de año y nombre -->
+                <small class="d-block mt-3">&copy; 2025 Melodías del pasado Inc. Todos los derechos reservados.</small>
+            </div>
+
+            <!-- Columna 2: Enlaces Rápidos (Sin cambios) -->
+            <div class="col-md-4 mb-4">
+                <h5 class="text-uppercase mb-3">Enlaces Rápidos</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><a href="{{ url_for('about') }}" class="text-white text-decoration-none hover-link"><i class="fas fa-info-circle me-2"></i>Acerca de Nosotros</a></li>
+                    <li class="mb-2"><a href="{{ url_for('help') }}" class="text-white text-decoration-none hover-link"><i class="fas fa-question-circle me-2"></i>Ayuda / Soporte</a></li>
+                    {% if not current_user.is_authenticated %}
+                        <li><a href="{{ url_for('login') }}" class="text-white text-decoration-none hover-link"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Columna 3: Contacto (Cambio de Email) -->
+            <div class="col-md-4 mb-4">
+                <h5 class="text-uppercase mb-3">Contáctanos</h5>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><i class="fas fa-map-marker-alt me-2 text-warning"></i> San José, Costa Rica</li>
+                    <!-- EMAIL ACTUALIZADO -->
+                    <li class="mb-2"><i class="fas fa-envelope me-2 text-warning"></i> privacidad@melodiasdelpasado.cr</li>
+                    <li class="mb-2"><i class="fas fa-phone me-2 text-warning"></i> +506 2222-2222</li>
+                    <li class="mb-2"><i class="fab fa-whatsapp me-2 text-warning"></i> +506 8888-8888</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

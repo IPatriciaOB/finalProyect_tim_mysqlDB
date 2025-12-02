@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    
+    <!-- TÍTULO DINÁMICO SEGÚN ROL -->
+    <h2 class="mb-4">
+        Mi Cuenta 
+        {% if current_user.role == 'empleado' %}
+            (Servicio al Cliente)
+        {% elif current_user.role == 'admin' %}
+            (Administrativa)
+        {% endif %}
+    </h2>
+    
+    <!-- NAVEGACIÓN DE PESTAÑAS -->
+    <ul class="nav nav-tabs mb-4" id="profileTab" role="tablist">
+        <!-- 1. Pestaña Datos (Para TODOS) -->
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#account-info">
+                <i class="fas fa-user-cog"></i> Información de Cuenta
+            </button>
+        </li>
+        
+        <!-- 2. Pestañas SOLO para CLIENTES (Ocultas para Admin y Empleado) -->
+        {% if current_user.role == 'cliente' %}
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders-general">
+                    <i class="fas fa-box-open"></i> Mis Pedidos
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#payment-methods">
+                    <i class="fas fa-credit-card"></i> Métodos de Pago
+                </button>
+            </li>
+        {% endif %}
+    </ul>
+
+    <div class="tab-content" id="profileTabContent">
+        
+        <!-- === SECCIÓN 1: INFORMACIÓN DE CUENTA === -->
+        <div class="tab-pane fade show active" id="account-info">
+            <div class="card p-4 shadow-sm border-0 bg-light">
+                <h4 class="mb-3">Datos Personales</h4>
+                <form method="POST">
+                    <div class="row g-3">
+                        
+                        <!-- Mostrar Rol Informativo (Si no es cliente) -->
+                        {% if current_user.role != 'cliente' %}
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-primary">Perfil Corporativo</label>
+                            <input type="text" class="form-control border-primary" 
+                                   value="Rol: {{ 'Administrador' if current_user.role == 'admin' else 'Empleado / Vendedor' }}" 
+                                   disabled readonly>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ user.nombre }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" name="apellido" class="form-control" value="{{ user.apellido }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control" value="{{ user.telefono }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" name="direccion" class="form-control" value="{{ user.direccion }}">
+                        </div>
+                        
+                        <div class="col-12 mt-4"><h5 class="text-primary">Seguridad</h5></div>
+                        <div class="col-md-6">
+                            <input type="password" name="password" class="form-control" placeholder="Nueva Contraseña (dejar vacío para mantener)">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="password" name="confirm_password" class="form-control" placeholder="Confirmar Contraseña">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
+                    </div>
+                </form>
+
+                <!-- 3. CERRAR CUENTA (SOLO CLIENTES) -->
+                {% if current_user.role == 'cliente' %}
+                    <hr class="my-5">
+                    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="text-danger">Cerrar Cuenta</h5>
+                            <p class="mb-0 small">Al cerrar tu cuenta, tu acceso será bloqueado.</p>
+                        </div>
+                        <a href="{{ url_for('deactivate_account') }}" 
+                           class="btn btn-danger" 
+                           onclick="return confirm('¿Estás seguro de que deseas cerrar tu cuenta?')">
+                            Desactivar Cuenta
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- === SECCIÓN 2: PEDIDOS Y PAGOS (SOLO CLIENTES) === -->
+        {% if current_user.role == 'cliente' %}
+            
+            <!-- PESTAÑA PEDIDOS -->
+            <div class="tab-pane fade" id="orders-general">
+                
+                <h4 class="text-success mb-4 border-bottom pb-2">Pedidos en Curso</h4>
+                {% if not active_orders %}
+                    <div class="alert alert-light text-center py-5 border mb-5">
+                        <i class="fas fa-shopping-basket fa-3x text-muted mb-3"></i>
+                        <p class="text-muted fst-italic">No tienes pedidos activos.</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-success">Ir a la tienda</a>
+                    </div>
+                {% else %}
+                    {% for o in active_orders %}
+                    <div class="card mb-4 shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-receipt text-secondary me-2"></i>Pedido #{{ o.id }}</h5>
+                                <small class="text-muted">Fecha: {{ o.date.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <div>
+                                {% if o.status == 'Pendiente de envío' %}
+                                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill border border-warning">Pendiente</span>
+                                {% elif o.status == 'Enviado' %}
+                                    <span class="badge bg-primary px-3 py-2 rounded-pill">Enviado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if o.status == 'Enviado' %}
+                            <div class="alert alert-primary shadow-sm d-flex align-items-start mb-4">
+                                <i class="fas fa-truck-moving fa-2x me-3 mt-1"></i>
+                                <div class="w-100">
+                                    <h6 class="fw-bold">¡En camino!</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-4"><small class="fw-bold text-primary">Transportista</small><div class="fw-bold">{{ o.shipping_company }}</div></div>
+                                        <div class="col-md-4"><small class="fw-bold text-primary">Tracking</small><div class="fw-bold bg-white px-2 rounded d-inline-block">{{ o.tracking_number }}</div></div>
+                                        <div class="col-md-4"><small class="fw-bold text-primary">Entrega</small><div class="fw-bold">{{ o.delivery_window[0].strftime('%d/%m') }} - {{ o.delivery_window[1].strftime('%d/%m') }}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="table-responsive mb-3">
+                                <table class="table align-middle">
+                                    <thead class="table-light small"><tr><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th><th class="text-end">Total</th></tr></thead>
+                                    <tbody>
+                                        {% for item in o.items %}
+                                        <tr><td class="fw-bold">{{ item.product_name }}</td><td class="text-center">{{ item.quantity }}</td><td class="text-end">${{ item.price }}</td><td class="text-end fw-bold">${{ item.price * item.quantity }}</td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="row justify-content-end">
+                                <div class="col-md-5">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between border-0 py-1"><span class="text-muted">Subtotal</span><span>${{ o.total }}</span></li>
+                                        <li class="list-group-item d-flex justify-content-between border-0 py-1"><span class="text-muted">Descuento</span><span class="text-success">-$0.00</span></li>
+                                        <li class="list-group-item d-flex justify-content-between border-0 py-1"><span class="text-muted">Envío</span><span class="text-success fw-bold">Gratis</span></li>
+                                        <li class="list-group-item d-flex justify-content-between border-top py-3"><span class="h5 fw-bold">Total</span><span class="h4 fw-bold text-primary">${{ o.total }}</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% if o.status == 'Pendiente de envío' %}
+                        <div class="card-footer bg-white border-top-0 text-end pb-3">
+                            <a href="{{ url_for('cancel_order', order_id=o.id) }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Cancelar pedido?')">Cancelar Pedido</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Historial Cancelados -->
+                <h4 class="text-secondary mb-3 mt-5 border-bottom pb-2">Historial de Cancelados</h4>
+                {% if not cancelled_orders %}
+                    <p class="text-muted fst-italic">No hay pedidos cancelados.</p>
+                {% else %}
+                    {% for o in cancelled_orders %}
+                    <div class="card mb-3 bg-light border-secondary opacity-75">
+                        <div class="card-header d-flex justify-content-between">
+                            <span><strong>Pedido #{{ o.id }}</strong> ({{ o.date.strftime('%d/%m/%Y') }})</span>
+                            <span class="badge bg-secondary">CANCELADO</span>
+                        </div>
+                        <div class="card-body py-2">
+                             <ul class="list-group list-group-flush mb-2 bg-transparent">
+                                {% for item in o.items %}
+                                <li class="list-group-item bg-transparent d-flex justify-content-between px-0 py-1"><span class="text-muted">{{ item.product_name }} (x{{ item.quantity }})</span><span class="text-muted">${{ item.price * item.quantity }}</span></li>
+                                {% endfor %}
+                            </ul>
+                            <div class="text-end border-top pt-2"><strong class="text-muted">Total: ${{ o.total }}</strong></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- PESTAÑA MÉTODOS DE PAGO -->
+            <div class="tab-pane fade" id="payment-methods">
+                <div class="row">
+                    <div class="col-md-7">
+                        <h5 class="mb-3">Mis Tarjetas Guardadas</h5>
+                        {% if current_user.payment_methods %}
+                            <div class="list-group">
+                                {% for pm in current_user.payment_methods %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fab fa-cc-{{ pm.card_type|lower }} fa-lg me-2"></i>
+                                        <strong>{{ pm.card_type }}</strong> **** {{ pm.masked_number[-4:] }}
+                                        <br><small class="text-muted">{{ pm.card_holder }}</small>
+                                    </div>
+                                    <a href="{{ url_for('delete_payment_method', id=pm.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar?')"><i class="fas fa-trash"></i></a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">No tienes tarjetas registradas.</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card bg-light border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6>Agregar Nueva Tarjeta</h6>
+                                <form action="{{ url_for('add_payment_method') }}" method="POST">
+                                    <input type="text" name="card_holder" class="form-control form-control-sm mb-2" required placeholder="Titular">
+                                    <input type="text" name="card_number" class="form-control form-control-sm mb-2" required maxlength="16" placeholder="Número">
+                                    <select name="card_type" class="form-select form-select-sm mb-3">
+                                        <option value="Visa">Visa</option>
+                                        <option value="Mastercard">Mastercard</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">Guardar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        {% endif %} <!-- Fin IF Cliente -->
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var hash = window.location.hash;
+    if (hash) {
+        var triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+        if (triggerEl) setTimeout(function() { triggerEl.click(); }, 100);
+    }
+});
+</script>
+{% endblock %}
+

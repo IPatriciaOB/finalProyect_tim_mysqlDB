@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- ESTILOS ESPECÍFICOS PARA EL BANNER -->
+<style>
+    .hero-banner {
+        /* Imagen de fondo */
+        background-image: url("{{ url_for('static', filename='img/banner_music.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+        height: 500px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 3rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        color: white;
+        text-align: center;
+        background-color: rgba(0, 0, 0, 0.65);
+        padding: 40px;
+        border-radius: 15px;
+        max-width: 700px;
+        margin: 0 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(3px);
+    }
+
+    .text-outline {
+        text-shadow: 
+            -1px -1px 0 #000,  
+             1px -1px 0 #000,
+            -1px  1px 0 #000,
+             1px  1px 0 #000,
+             2px 2px 4px rgba(0,0,0,0.8);
+    }
+</style>
+
+<!-- BANNER HERO -->
+<div class="hero-banner">
+    <div class="hero-content">
+        <h1 class="display-4 fw-normal text-outline">¡Bienvenidos a Melodías del pasado!</h1>
+        
+        <p class="fs-4 mt-3 text-outline">
+            Somos una tienda dedicada a ofrecer instrumentos musicales de alta calidad, pensados para acompañarte en cada nota y en cada momento de inspiración.
+        </p>
+    </div>
+</div>
+
+{% if checkout_mode %}
+    <!-- VISTA DE CHECKOUT -->
+    <div class="card">
+        <div class="card-header">Resumen de Compra</div>
+        <div class="card-body">
+            <ul class="list-group mb-3">
+                {% for p in productos %}
+                <li class="list-group-item d-flex justify-content-between lh-sm">
+                    <div>
+                        <h6 class="my-0">{{ p.nombre }}</h6>
+                        <small class="text-muted">Cantidad: {{ counts[p.id] }}</small>
+                    </div>
+                    <span class="text-muted">${{ p.precio * counts[p.id] }}</span>
+                </li>
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Total (USD)</span>
+                    <strong>${{ total }}</strong>
+                </li>
+            </ul>
+            <form method="POST" action="{{ url_for('checkout') }}">
+                <button type="submit" class="btn btn-success w-100">Confirmar y Pagar</button>
+            </form>
+        </div>
+    </div>
+
+{% else %}
+    <!-- VISTA DE CATALOGO -->
+
+    <!-- TÍTULO DE SECCIÓN -->
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Nuestros Productos</h2>
+        <div style="width: 60px; height: 3px; background-color: #0d6efd; margin: 10px auto;"></div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for producto in productos %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0">
+                <!-- Imagen -->
+                <div class="bg-light text-center overflow-hidden">
+                    <img src="{{ url_for('static', filename='img/' + producto.imagen) }}" 
+                         class="card-img-top" 
+                         alt="{{ producto.nombre }}" 
+                         style="height: 250px; object-fit: cover; transition: transform 0.3s ease;">
+                </div>
+                
+                <div class="card-body text-center">
+                    <!-- Solo mostramos el Nombre -->
+                    <h5 class="card-title fw-bold">{{ producto.nombre }}</h5>
+                </div>
+                
+                <div class="card-footer bg-white border-top-0 pb-4 text-center">
+                    <!-- Botón "Ver detalles" -->
+                    <a href="{{ url_for('product_detail', id=producto.id) }}" class="btn btn-outline-dark w-75 rounded-pill">
+                        Ver detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% endblock %}

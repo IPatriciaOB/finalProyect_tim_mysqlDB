@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4"> 
+    
+    <!-- Título de la página -->
+    <h2 class="mb-4">Acerca de Nosotros</h2>
+    
+    <!-- BLOQUE DE TEXTO UNIFICADO  -->
+    <div class="mb-5 text-dark">
+        
+        <!-- 1. Frase introductoria  -->
+        <p class="fs-5 mb-4">
+            Conoce la historia detrás de cada nota.
+        </p>
+
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <!-- 2. "Nuestra Historia" -->
+                <p class="fs-5 fw-bold mb-2">
+                    Nuestra Historia
+                </p>
+                
+                <!-- 3. Cuerpo del texto  -->
+                <p class="fs-5">
+                    Fundada en 2025, Melodías del pasado nació de la pasión compartida por un grupo de músicos que notaron la falta de acceso a instrumentos de calidad a precios justos en la región.
+                </p>
+                <p class="fs-5">
+                    Lo que comenzó como un pequeño taller de reparación y venta en un garaje, rápidamente creció gracias a la confianza de nuestra comunidad. Hoy, somos referentes en el mercado, conectando a fabricantes de renombre mundial con artistas locales y estudiantes apasionados.
+                </p>
+            </div>
+            
+            <div class="col-md-6 text-center">
+                <!-- IMAGEN DEL LOGO -->
+                <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                     alt="Logo Melodías del pasado" 
+                     class="img-fluid" 
+                     style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Misión y Visión -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm bg-light">
+                <div class="card-body text-center p-5">
+                    <div class="mb-3 text-warning"><i class="fas fa-bullseye fa-3x"></i></div>
+                    <h3 class="card-title">Misión</h3>
+                    <p class="card-text">
+                        Democratizar el acceso a la música ofreciendo instrumentos de alta calidad, brindando asesoría experta y fomentando el crecimiento cultural de nuestra sociedad a través del arte sonoro.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm bg-light">
+                <div class="card-body text-center p-5">
+                    <div class="mb-3 text-info"><i class="fas fa-eye fa-3x"></i></div>
+                    <h3 class="card-title">Visión</h3>
+                    <p class="card-text">
+                        Ser la tienda de instrumentos musicales líder en Costa Rica, reconocida no solo por nuestro catálogo, sino por ser un pilar fundamental en la educación y desarrollo de nuevos talentos musicales.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-5">
+        <a href="{{ url_for('index') }}" class="btn btn-dark btn-lg">Ver nuestros productos</a>
+    </div>
+</div>
+{% endblock %}

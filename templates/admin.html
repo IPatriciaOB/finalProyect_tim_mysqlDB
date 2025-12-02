@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- ENCABEZADO: CAMBIA SEGÚN ROL -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        {% if current_user.role == 'empleado' %}
+            Servicio al Cliente
+        {% else %}
+            Panel de Administración
+        {% endif %}
+    </h2>
+    <a href="{{ url_for('download_report') }}" class="btn btn-success"><i class="fas fa-file-excel"></i> Reporte Excel</a>
+</div>
+
+<!-- PESTAÑAS: USUARIOS OCULTO PARA EMPLEADOS -->
+<ul class="nav nav-tabs" id="adminTab" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#inv">Inventario</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ords">Gestionar Pedidos</button></li>
+  
+  <!-- Solo el Admin ve la pestaña Usuarios -->
+  {% if current_user.role == 'admin' %}
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usrs">Usuarios</button></li>
+  {% endif %}
+</ul>
+
+<div class="tab-content mt-3" id="adminTabContent">
+  
+  <!-- === SECCIÓN 1: INVENTARIO === -->
+  <div class="tab-pane fade show active" id="inv">
+      <div class="card mb-4 bg-light">
+          <div class="card-body">
+              <h5>Agregar Producto Nuevo</h5>
+              <!-- FORMULARIO CON SUBIDA DE ARCHIVOS (enctype) -->
+              <form action="{{ url_for('add_product') }}" method="POST" enctype="multipart/form-data" class="row g-2">
+                  <div class="col-md-3"><input name="nombre" placeholder="Nombre" class="form-control" required></div>
+                  <div class="col-md-2"><input name="precio" placeholder="Precio" class="form-control" required></div>
+                  <div class="col-md-2"><input name="stock" placeholder="Stock" class="form-control" required></div>
+                  <!-- CAMPO DE IMAGEN TIPO FILE -->
+                  <div class="col-md-3"><input type="file" name="imagen" class="form-control" accept="image/*"></div>
+                  <div class="col-md-2"><button class="btn btn-primary w-100">Crear</button></div>
+                  <div class="col-12 mt-2"><input name="descripcion" placeholder="Descripción corta" class="form-control"></div>
+              </form>
+          </div>
+      </div>
+      
+      <table class="table table-striped align-middle">
+          <thead class="table-dark"><tr><th>ID</th><th>Img</th><th>Nombre</th><th>Desc.</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+          <tbody>
+              {% for p in productos %}
+              <tr>
+                  <td>{{ p.id }}</td>
+                  <td><img src="{{ url_for('static', filename='img/' + p.imagen) }}" width="40"></td>
+                  <td>{{ p.nombre }}</td>
+                  <td><small>{{ p.descripcion[:30] }}...</small></td>
+                  <td>${{ p.precio }}</td>
+                  <td>
+                      {% if p.stock < 5 %}<span class="text-danger fw-bold">{{ p.stock }}</span>
+                      {% else %}{{ p.stock }}{% endif %}
+                  </td>
+                  <td>
+                      <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ p.id }}">
+                          <i class="fas fa-edit"></i>
+                      </button>
+                      <a href="{{ url_for('delete_product', id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar producto?')">
+                          <i class="fas fa-trash"></i>
+                      </a>
+                  </td>
+              </tr>
+
+              <!-- MODAL EDICIÓN -->
+              <div class="modal fade" id="editModal{{ p.id }}" tabindex="-1">
+                  <div class="modal-dialog">
+                      <div class="modal-content">
+                          <div class="modal-header">
+                              <h5 class="modal-title">Editar: {{ p.nombre }}</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <form action="{{ url_for('edit_product', id=p.id) }}" method="POST">
+                              <div class="modal-body">
+                                  <div class="mb-2"><label>Nombre</label><input type="text" name="nombre" class="form-control" value="{{ p.nombre }}"></div>
+                                  <div class="mb-2"><label>Descripción</label><textarea name="descripcion" class="form-control">{{ p.descripcion }}</textarea></div>
+                                  <div class="row">
+                                      <div class="col"><label>Precio</label><input type="number" step="0.01" name="precio" class="form-control" value="{{ p.precio }}"></div>
+                                      <div class="col"><label>Stock</label><input type="number" name="stock" class="form-control" value="{{ p.stock }}"></div>
+                                  </div>
+                                  <div class="mb-2 mt-2"><label>Nombre Archivo Imagen</label><input type="text" name="imagen" class="form-control" value="{{ p.imagen }}"></div>
+                              </div>
+                              <div class="modal-footer">
+                                  <button type="submit" class="btn btn-primary">Guardar</button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
+
+  <!-- === SECCIÓN 2: PEDIDOS === -->
+  <div class="tab-pane fade" id="ords">
+      <table class="table table-hover">
+          <thead class="table-dark"><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado Actual</th><th>Acciones</th></tr></thead>
+          <tbody>
+              {% for o in pedidos %}
+              <tr>
+                  <td>{{ o.id }}</td>
+                  <td>{{ o.user.nombre }} {{ o.user.apellido }}</td>
+                  <td>{{ o.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>${{ o.total }}</td>
+                  <td>
+                      <form action="{{ url_for('update_order', id=o.id) }}" method="POST" class="d-flex">
+                          <select name="status" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                              <option value="Pendiente de envío" {% if o.status == 'Pendiente de envío' %}selected{% endif %}>Pendiente</option>
+                              <option value="Enviado" {% if o.status == 'Enviado' %}selected{% endif %}>Enviado</option>
+                              <option value="Entregado" {% if o.status == 'Entregado' %}selected{% endif %}>Entregado</option>
+                              <option value="Cancelado" {% if o.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                          </select>
+                      </form>
+                  </td>
+                  <td>
+                      <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#orderModal{{ o.id }}">
+                          <i class="fas fa-eye"></i> Detalles
+                      </button>
+                  </td>
+              </tr>
+
+              <!-- MODAL DETALLES PEDIDO -->
+              <div class="modal fade" id="orderModal{{ o.id }}" tabindex="-1">
+                  <div class="modal-dialog">
+                      <div class="modal-content">
+                          <div class="modal-header">
+                              <h5 class="modal-title">Pedido #{{ o.id }} - Cliente: {{ o.user.nombre }}</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                              <h6>Datos de Cliente:</h6>
+                              <p class="mb-2">
+                                  <strong>Dirección:</strong> {{ o.user.direccion }}<br>
+                                  <strong>Teléfono:</strong> {{ o.user.telefono }}<br>
+                                  <strong>Email:</strong> {{ o.user.email }}
+                              </p>
+
+                              <!-- INFO RASTREO (Solo si Enviado/Entregado) -->
+                              {% if o.status == 'Enviado' or o.status == 'Entregado' %}
+                                  <div class="alert alert-info border-info shadow-sm mt-3">
+                                      <h6 class="alert-heading fw-bold text-primary">
+                                          <i class="fas fa-shipping-fast"></i> Detalles de Envío
+                                      </h6>
+                                      <hr class="my-1">
+                                      <p class="mb-0">
+                                          <strong>Transportista:</strong> {{ o.shipping_company }}<br>
+                                          <strong>No. de Guía:</strong> <span class="badge bg-dark">{{ o.tracking_number }}</span>
+                                      </p>
+                                  </div>
+                              {% endif %}
+                              
+                              <hr>
+                              <h6>Productos:</h6>
+                              <ul class="list-group">
+                                  {% for item in o.items %}
+                                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                                      {{ item.product_name }} (x{{ item.quantity }})
+                                      <span>${{ item.price * item.quantity }}</span>
+                                  </li>
+                                  {% endfor %}
+                              </ul>
+                              <div class="text-end mt-3">
+                                  <h4>Total: ${{ o.total }}</h4>
+                              </div>
+                          </div>
+                          <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
+
+  <!-- === SECCIÓN 3: USUARIOS (SOLO ADMIN) === -->
+  {% if current_user.role == 'admin' %}
+  <div class="tab-pane fade" id="usrs">
+      
+      <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+          <div class="alert alert-info py-2 mb-0 px-3">Gestión de Accesos y Roles</div>
+          <!-- Botón para abrir modal de creación -->
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
+              <i class="fas fa-user-plus"></i> Crear Empleado
+          </button>
+      </div>
+
+      <table class="table table-bordered align-middle table-hover">
+          <thead class="table-dark"><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+              {% for u in usuarios %}
+              <tr>
+                  <td>{{ u.email }}</td>
+                  <td>{{ u.nombre }} {{ u.apellido }}</td>
+                  <td>
+                      <span class="badge bg-{{ 'primary' if u.role=='admin' else ('info' if u.role=='empleado' else 'secondary') }}">
+                          {{ u.role|upper }}
+                      </span>
+                  </td>
+                  <td>
+                      {% if u.is_active %}
+                        <span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Activo</span>
+                      {% else %}
+                        <span class="text-danger fw-bold"><i class="fas fa-ban"></i> Inactivo</span>
+                      {% endif %}
+                  </td>
+                  <td class="text-center">
+                      <!-- Botón Activar/Desactivar (Excluye al propio admin) -->
+                      {% if u.id != current_user.id %}
+                          {% if u.is_active %}
+                              <a href="{{ url_for('toggle_user_status', id=u.id) }}" class="btn btn-sm btn-outline-danger" title="Desactivar cuenta" onclick="return confirm('¿Desactivar este usuario?')">
+                                  <i class="fas fa-user-slash"></i> Desactivar
+                              </a>
+                          {% else %}
+                              <a href="{{ url_for('toggle_user_status', id=u.id) }}" class="btn btn-sm btn-outline-success" title="Activar cuenta">
+                                  <i class="fas fa-user-check"></i> Activar
+                              </a>
+                          {% endif %}
+                      {% else %}
+                          <span class="text-muted small">Tu cuenta</span>
+                      {% endif %}
+                  </td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+
+      <!-- MODAL PARA CREAR EMPLEADO -->
+      <div class="modal fade" id="createEmployeeModal" tabindex="-1">
+          <div class="modal-dialog">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title">Registrar Nuevo Empleado</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form action="{{ url_for('create_employee') }}" method="POST">
+                      <div class="modal-body">
+                          <div class="row g-2">
+                              <div class="col-md-6 mb-2">
+                                  <label>Nombre</label>
+                                  <input type="text" name="nombre" class="form-control" required>
+                              </div>
+                              <div class="col-md-6 mb-2">
+                                  <label>Apellido</label>
+                                  <input type="text" name="apellido" class="form-control" required>
+                              </div>
+                          </div>
+                          <div class="mb-2">
+                              <label>Email Corporativo</label>
+                              <input type="email" name="email" class="form-control" required>
+                          </div>
+                          <div class="row g-2">
+                              <div class="col-md-6 mb-2">
+                                  <label>Teléfono</label>
+                                  <input type="text" name="telefono" class="form-control" required>
+                              </div>
+                              <div class="col-md-6 mb-2">
+                                  <label>Rol</label>
+                                  <input type="text" class="form-control" value="Empleado / Vendedor" disabled>
+                              </div>
+                          </div>
+                          <div class="mb-2">
+                              <label>Dirección</label>
+                              <input type="text" name="direccion" class="form-control" required>
+                          </div>
+                          <div class="mb-3">
+                              <label>Contraseña Temporal</label>
+                              <input type="password" name="password" class="form-control" required>
+                          </div>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                          <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+  {% endif %}
+
+</div> <!-- Fin del tab-content -->
+
+<!-- SCRIPT PARA MANTENER LA PESTAÑA ACTIVA -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Obtener el hash de la URL (ej: #usrs)
+    var hash = window.location.hash;
+    
+    if (hash) {
+        // 2. Buscar el botón del menú que abre esa sección
+        // Busca un botón que tenga data-bs-target="#usrs"
+        var triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+        
+        // 3. Si el botón existe, hacerle clic automáticamente
+        if (triggerEl) {
+            triggerEl.click();
+        }
+    }
+});
+</script>
+
+{% endblock %}
