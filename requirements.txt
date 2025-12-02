@@ -1,3 +1,6 @@
+Requisitos del Sistema: Python 3.x, MySQL, Git.
+
+Dependencias: 
 Flask
 Flask-SQLAlchemy
 Flask-Login
@@ -5,10 +8,8 @@ pymysql
 openpyxl
 werkzeug
 
-Requisitos del Sistema: Python 3.x, MySQL, Git.
-Dependencias: Una lista o captura del archivo requirements.txt.
-Pasos de Instalación:
-Clonar el repositorio / Descomprimir carpeta.
+#Pasos de Instalación:
+Clonar el repositorio / Descomprimir carpeta .zip.
 Crear entorno virtual (python -m venv venv).
 Instalar librerías (pip install -r requirements.txt).
 Importar la base de datos MySQL.
