@@ -5,4 +5,12 @@ pymysql
 openpyxl
 werkzeug
 
-libreria-falsa==1.0
+Requisitos del Sistema: Python 3.x, MySQL, Git.
+Dependencias: Una lista o captura del archivo requirements.txt.
+Pasos de Instalación:
+Clonar el repositorio / Descomprimir carpeta.
+Crear entorno virtual (python -m venv venv).
+Instalar librerías (pip install -r requirements.txt).
+Importar la base de datos MySQL.
+Ejecutar el servidor (python app.py).
+Credenciales de acceso por defecto (ej: admin@melodias.com / 12345).
