@@ -4,3 +4,5 @@ Flask-Login
 pymysql
 openpyxl
 werkzeug
+
+libreria-falsa==1.0
