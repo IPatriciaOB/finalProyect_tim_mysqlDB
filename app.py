@@ -59,7 +59,8 @@ def help():
     return render_template('help.html')
 
 # --- CARRITO DE COMPRAS ---
-# --- NUEVA RUTA: DETALLE DEL PRODUCTO ---
+# Lógica del carrito validada.
+# --- RUTA: DETALLE DEL PRODUCTO ---
 @app.route('/product/<int:id>')
 def product_detail(id):
     # Busca el producto por ID, si no existe devuelve error 404
@@ -67,7 +68,6 @@ def product_detail(id):
     return render_template('product_detail.html', product=product)
 
 # --- RUTA MODIFICADA: AGREGAR AL CARRITO (Soporta Cantidades) ---
-# Nota que agregamos methods=['GET', 'POST'] para recibir el formulario
 @app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
 def add_to_cart(product_id):
     # 1. Determinar cuántos productos agregar
