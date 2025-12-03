@@ -14,12 +14,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mi_secreto_super_seguro'
 
 # --- CONFIGURACIÓN DE SUBIDA DE IMÁGENES ---
-# Esto define dónde se guardarán las fotos
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'img')
-# -------------------------------------------
 
 # --- CONFIGURACIÓN DB ---
-# Asegúrate de tener instalado: pip install pymysql
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:admin@localhost/melodias_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -32,26 +29,10 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- RUTA DE MANTENIMIENTO (Fix Password) ---
-@app.route('/fix_password')
-def fix_password():
-    # Esta ruta establece la contraseña '12345' para TODOS los usuarios.
-    # Úsala UNA VEZ al principio y luego borra este bloque o coméntalo.
-    try:
-        nuevo_hash = generate_password_hash("12345")
-        users = User.query.all()
-        for u in users:
-            u.password = nuevo_hash
-        db.session.commit()
-        return "¡ÉXITO! Todas las contraseñas son ahora: 12345. <br><a href='/login'>Ir al Login</a>"
-    except Exception as e:
-        return f"Error conectando a DB: {str(e)}"
-
 # --- RUTAS PÚBLICAS ---
 @app.route('/')
 def index():
     productos = Product.query.all()
-    # Verificamos si hay productos, si no, mostramos aviso
     return render_template('index.html', productos=productos)
 
 @app.route('/help')
@@ -59,18 +40,15 @@ def help():
     return render_template('help.html')
 
 # --- CARRITO DE COMPRAS ---
-# Lógica del carrito validada.
 # --- RUTA: DETALLE DEL PRODUCTO ---
 @app.route('/product/<int:id>')
 def product_detail(id):
-    # Busca el producto por ID, si no existe devuelve error 404
     product = Product.query.get_or_404(id)
     return render_template('product_detail.html', product=product)
 
-# --- RUTA MODIFICADA: AGREGAR AL CARRITO (Soporta Cantidades) ---
+# --- RUTA: AGREGAR AL CARRITO ---
 @app.route('/add_to_cart/<int:product_id>', methods=['GET', 'POST'])
 def add_to_cart(product_id):
-    # 1. Determinar cuántos productos agregar
     quantity = 1
     if request.method == 'POST':
         try:
@@ -78,31 +56,23 @@ def add_to_cart(product_id):
         except ValueError:
             quantity = 1
     
-    # 2. Verificar Stock
     product = Product.query.get_or_404(product_id)
     
     if 'cart' not in session:
         session['cart'] = []
         
-    # Contamos cuántos de este producto ya tiene el usuario en su carrito
     current_in_cart = session['cart'].count(product_id)
     
-    # Si lo que quiere agregar + lo que ya tiene supera el stock real
     if (current_in_cart + quantity) > product.stock:
         flash(f'No hay suficiente stock. Disponibles: {product.stock}, Tienes en carrito: {current_in_cart}', 'warning')
-        # Lo devolvemos a la vista del detalle para que corrija la cantidad
         return redirect(url_for('product_detail', id=product_id))
 
     # 3. Agregar al carrito (Session)
-    # Como tu lógica de carrito funciona por lista de IDs [1, 1, 2],
-    # hacemos un ciclo para agregar el ID tantas veces como la cantidad elegida.
     for _ in range(quantity):
         session['cart'].append(product_id)
         
     session.modified = True
     flash(f'Se agregaron {quantity} unidades de {product.nombre} al carrito.', 'success')
-    
-    # Redirigir al inicio para seguir comprando
     return redirect(url_for('index'))
 
 @app.route('/cart')
@@ -116,7 +86,6 @@ def view_cart():
         return render_template('cart.html', items=[], total=0, is_empty=True)
     
     counts = Counter(cart_ids)
-    # Buscamos los productos en la DB
     productos_db = Product.query.filter(Product.id.in_(list(counts.keys()))).all()
     
     items = []
@@ -126,10 +95,9 @@ def view_cart():
         subtotal = p.precio * cantidad
         total_general += subtotal
         items.append({'product': p, 'cantidad': cantidad, 'subtotal': subtotal})
-    # OBTENER MÉTODOS DE PAGO DEL USUARIO ACTUAL
     user_payments = []
     if current_user.is_authenticated:
-        from models import PaymentMethod # Importación local por si acaso
+        from models import PaymentMethod 
         user_payments = PaymentMethod.query.filter_by(user_id=current_user.id).all()
 
     return render_template('cart.html', items=items, total=total_general, is_empty=False, payment_methods=user_payments)
@@ -137,7 +105,6 @@ def view_cart():
 @app.route('/remove_from_cart/<int:product_id>')
 def remove_from_cart(product_id):
     if 'cart' in session:
-        # Filtramos para quitar todas las instancias de ese ID
         session['cart'] = [id for id in session['cart'] if id != product_id]
         session.modified = True
     flash('Producto eliminado.', 'info')
@@ -146,7 +113,6 @@ def remove_from_cart(product_id):
 @app.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
-    # 1. Validar si seleccionó método de pago
     payment_method_id = request.form.get('payment_method_id')
     if not payment_method_id:
         flash('Por favor selecciona un método de pago para continuar.', 'danger')
@@ -161,22 +127,22 @@ def checkout():
     
     total_order = 0
     
-    # 1. Verificar Stock
+    # Verificar Stock
     for p in productos_db:
         if p.stock < counts[p.id]:
             flash(f'Stock insuficiente para: {p.nombre}. Disponibles: {p.stock}', 'danger')
             return redirect(url_for('view_cart'))
         total_order += p.precio * counts[p.id]
         
-    # 2. Crear Pedido
+    # Crear Pedido
     new_order = Order(user_id=current_user.id, total=total_order, status='Pendiente de envío')
     db.session.add(new_order)
-    db.session.commit() # Commit para obtener el ID del pedido
+    db.session.commit() 
     
-    # 3. Crear Items y Restar Stock
+    # Crear Items y Restar Stock
     for p in productos_db:
         qty = counts[p.id]
-        p.stock -= qty # Actualizar stock en DB
+        p.stock -= qty 
         item = OrderItem(
             order_id=new_order.id, 
             product_id=p.id, 
@@ -186,37 +152,30 @@ def checkout():
         )
         db.session.add(item)
         
-    db.session.commit() # Guardar cambios finales
-    session.pop('cart', None) # Vaciar carrito
+    db.session.commit() 
+    session.pop('cart', None) 
     flash('¡Pedido realizado con éxito!', 'success')
     return render_template('order_success.html')
 
-# ---------------------------------------------------------
-#CANCELAR PEDIDO
-# ---------------------------------------------------------
+# CANCELAR PEDIDO
 @app.route('/cancel_order/<int:order_id>')
 @login_required
 def cancel_order(order_id):
-    # 1. Buscar el pedido
     order = Order.query.get_or_404(order_id)
     
-    # 2. Seguridad: Verificar que el pedido sea del usuario actual
     if order.user_id != current_user.id:
         flash('No tienes permiso para modificar este pedido.', 'danger')
         return redirect(url_for('profile'))
     
-    # 3. Verificar estado: Solo se puede cancelar si no ha sido enviado
     if order.status != 'Pendiente de envío':
         flash('No se puede cancelar el pedido porque ya fue procesado o enviado.', 'warning')
         return redirect(url_for('profile'))
     
-    # 4. DEVOLVER STOCK (Importante)
     for item in order.items:
         producto = Product.query.get(item.product_id)
         if producto:
             producto.stock += item.quantity
             
-    # 5. Cambiar estado
     order.status = 'Cancelado'
     db.session.commit()
     
@@ -284,28 +243,20 @@ def login():
                 flash('Cuenta desactivada. Contacte al admin.', 'danger')
                 return redirect(url_for('login'))
             
-            # --- NUEVA LÍNEA: LIMPIAR CARRITO AL ENTRAR ---
             session.pop('cart', None) 
-            # ---------------------------------------------
             
             login_user(user)
             flash(f'Bienvenido, {user.nombre}', 'success')
-            
-            # --- INICIO DEL CAMBIO ---
-            
-            # 1. Prioridad: Si es admin o empleado, al panel de control
+
             if user.role in ['admin', 'empleado']: 
                 return redirect(url_for('admin_dashboard'))
             
-            # 2. Prioridad: ¿Viene de intentar comprar algo? (Detectar 'next')
             next_page = request.args.get('next')
             if next_page:
-                return redirect(next_page) # Lo mandamos a agregar al carrito
+                return redirect(next_page) 
                 
-            # 3. Default: Si entró normal, lo mandamos al inicio
             return redirect(url_for('index'))
-            
-            # --- FIN DEL CAMBIO ---
+
         else:
             flash('Credenciales incorrectas', 'danger')
     return render_template('login.html')
@@ -314,7 +265,6 @@ def login():
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
-        # Verificar si existe
         if User.query.filter_by(email=email).first():
             flash('El email ya está registrado.', 'danger')
             return redirect(url_for('register'))
@@ -364,17 +314,14 @@ def add_product():
         precio = float(request.form.get('precio'))
         stock = int(request.form.get('stock'))
         nombre = request.form.get('nombre')
-        descripcion = request.form.get('descripcion') # Asegúrate de agregar el campo descripción en el HTML si no estaba
+        descripcion = request.form.get('descripcion') 
         
-        # --- LÓGICA DE IMAGEN ---
-        imagen_nombre = "guitarra.jpg" # Imagen por defecto
+        imagen_nombre = "guitarra.jpg" 
         
-        # Verificamos si se subió un archivo
         if 'imagen' in request.files:
             file = request.files['imagen']
             if file and file.filename != '':
                 filename = secure_filename(file.filename)
-                # Guardar el archivo en la carpeta static/img
                 file.save(os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], filename))
                 imagen_nombre = filename
         # ------------------------
@@ -435,26 +382,20 @@ def update_order(id):
     new_status = request.form.get('status')
     
     # --- LÓGICA DE GENERACIÓN AUTOMÁTICA ---
-    # Si el estado cambia a 'Enviado' y aún no tiene guía asignada:
     if new_status == 'Enviado' and order.status != 'Enviado':
         
-        # 1. Seleccionar Compañía Aleatoria de la DB
         couriers = Courier.query.all()
         if couriers:
             selected_courier = random.choice(couriers)
             order.shipping_company = selected_courier.name
         else:
-            # Fallback por si la tabla está vacía
             order.shipping_company = "Transporte Interno"
 
-        # 2. Generar Tracking Number Aleatorio (Ej: TRK-83749281)
-        # Genera 8 dígitos al azar
         random_digits = ''.join(random.choices(string.digits, k=8))
         order.tracking_number = f"TRK-{random_digits}"
         
         flash(f'Pedido enviado. Se asignó guía: {order.tracking_number} ({order.shipping_company})', 'success')
 
-    # Actualizar estado
     order.status = new_status
     db.session.commit()
     
@@ -484,11 +425,9 @@ def download_report():
 @app.route('/deactivate_account')
 @login_required
 def deactivate_account():
-    # Solo cambiamos el estado, no borramos el registro
     current_user.is_active = False
     db.session.commit()
     
-    # Cerramos la sesión del usuario
     logout_user()
     
     flash('Tu cuenta ha sido cerrada correctamente. Esperamos verte pronto.', 'info')
@@ -501,8 +440,6 @@ def add_payment_method():
     holder = request.form.get('card_holder')
     ctype = request.form.get('card_type')
     
-    # Simulación de seguridad: Solo guardamos los últimos 4 dígitos
-    # En un entorno real, usaríamos Stripe o PayPal, nunca guardaríamos el número real así.
     masked = f"**** **** **** {number[-4:]}"
     
     new_pm = PaymentMethod(
@@ -515,7 +452,6 @@ def add_payment_method():
     db.session.commit()
     
     flash('Método de pago agregado correctamente.', 'success')
-    # Redirigimos a la pestaña de pagos usando el hash
     return redirect(url_for('profile') + '#payment-methods')
 
 @app.route('/profile/payment/delete/<int:id>')
@@ -542,7 +478,6 @@ def create_employee():
         flash('El email ya existe.', 'danger')
         return redirect(url_for('admin_dashboard'))
 
-    # Creamos el usuario con rol 'empleado'
     hashed_pw = generate_password_hash(request.form.get('password'))
     new_emp = User(
         nombre=request.form.get('nombre'),
@@ -551,7 +486,7 @@ def create_employee():
         password=hashed_pw,
         direccion=request.form.get('direccion'),
         telefono=request.form.get('telefono'),
-        role='empleado', # Rol fijo
+        role='empleado', 
         is_active=True
     )
     db.session.add(new_emp)
@@ -567,7 +502,6 @@ def toggle_user_status(id):
     
     user = User.query.get_or_404(id)
     
-    # Evitar que el admin se desactive a sí mismo
     if user.id == current_user.id:
         flash('No puedes desactivar tu propia cuenta.', 'warning')
         return redirect(url_for('admin_dashboard') + '#usrs')

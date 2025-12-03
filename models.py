@@ -20,13 +20,11 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
-    # Usamos Numeric para dinero, coincide con DECIMAL en SQL
     precio = db.Column(db.Numeric(10, 2), nullable=False) 
     stock = db.Column(db.Integer, default=0)
     imagen = db.Column(db.String(255)) 
 
 class Order(db.Model):
-    # 'order' es palabra reservada en SQL, SQLAlchemy lo maneja bien si usamos backticks en SQL manual
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -36,7 +34,6 @@ class Order(db.Model):
     tracking_number = db.Column(db.String(100))
     shipping_company = db.Column(db.String(100))
 
-    # Relaciones
     items = db.relationship('OrderItem', backref='order', lazy=True)
     user = db.relationship('User', backref='orders')
 
@@ -65,12 +62,8 @@ class PaymentMethod(db.Model):
     card_holder = db.Column(db.String(100))
     masked_number = db.Column(db.String(20))
     
-    # Relación inversa para acceder desde el usuario (user.payment_methods)
     user = db.relationship('User', backref='payment_methods')
 
 class Courier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
-
-
-
