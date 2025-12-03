@@ -15,16 +15,16 @@
     <style>
         /* Estilo personalizado para el Logo */
         .musical-brand {
-            font-family: 'Dancing Script', cursive; /* Fuente artística */
-            font-size: 2.8rem; /* Tamaño grande */
+            font-family: 'Dancing Script', cursive; 
+            font-size: 2.8rem; 
             letter-spacing: 1px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para resaltar */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
             transition: transform 0.3s ease;
         }
         
         .musical-brand:hover {
-            transform: scale(1.05); /* Efecto zoom suave al pasar el mouse */
-            color: #ffc107 !important; /* Cambia a amarillo al pasar mouse */
+            transform: scale(1.05); 
+            color: #ffc107 !important; 
         }
     </style>
 
@@ -57,28 +57,24 @@
              <li class="nav-item">
                  <a class="nav-link text-info" href="{{ url_for('admin_dashboard') }}">
                     {% if current_user.role == 'empleado' %}
-                        Panel de Servicio  <!-- Texto para Empleado -->
+                        Panel de Servicio  
                     {% else %}
-                        Panel Admin        <!-- Texto para Admin -->
+                        Panel Admin        
                     {% endif %}
                  </a>
              </li>
         {% endif %}
         
-        <!-- LÓGICA 3: QUITAR EMOJI/ICONO AL EMPLEADO -->
         <li class="nav-item">
             <a class="nav-link text-warning fw-bold" href="{{ url_for('profile') }}">
                 {% if current_user.role == 'empleado' %}
-                    <!-- Solo texto para empleado -->
                     Hola, {{ current_user.nombre|upper }}
                 {% else %}
-                    <!-- Con icono para Admin y Cliente -->
                     <i class="fas fa-user-shield" ></i> Hola, {{ current_user.nombre|upper }}
                 {% endif %}
             </a>
         </li>
         
-        <!-- BOTÓN SALIR -->
         <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Salir</a></li>
         
         <!-- CARRITO (Solo visible para Clientes) -->
@@ -96,7 +92,7 @@
         {% endif %}
         
     {% else %}
-        <!-- OPCIÓN PARA INVITADOS (NO LOGUEADOS) -->
+
         <li class="nav-item"><a class="nav-link btn btn-outline-light ms-2 border-0" href="{{ url_for('login') }}">Iniciar sesión</a></li>
     {% endif %}
 </ul>
@@ -124,16 +120,14 @@
         <div class="row">
             <!-- Columna 1: Info Empresa -->
             <div class="col-md-4 mb-4">
-                <!-- Cambio de nombre -->
                 <h5 class="musical-brand text-warning mb-3" style="font-size: 2.5rem;">Melodías del pasado</h5>
                 <p class="small text-secondary">
                     Tu tienda de confianza para encontrar el instrumento perfecto. Pasión por la música desde 2025.
                 </p>
-                <!-- Cambio de año y nombre -->
                 <small class="d-block mt-3">&copy; 2025 Melodías del pasado Inc. Todos los derechos reservados.</small>
             </div>
 
-            <!-- Columna 2: Enlaces Rápidos (Sin cambios) -->
+            <!-- Columna 2: Enlaces Rápidos -->
             <div class="col-md-4 mb-4">
                 <h5 class="text-uppercase mb-3">Enlaces Rápidos</h5>
                 <ul class="list-unstyled">
@@ -145,12 +139,11 @@
                 </ul>
             </div>
 
-            <!-- Columna 3: Contacto (Cambio de Email) -->
+            <!-- Columna 3: Contacto -->
             <div class="col-md-4 mb-4">
                 <h5 class="text-uppercase mb-3">Contáctanos</h5>
                 <ul class="list-unstyled small">
                     <li class="mb-2"><i class="fas fa-map-marker-alt me-2 text-warning"></i> San José, Costa Rica</li>
-                    <!-- EMAIL ACTUALIZADO -->
                     <li class="mb-2"><i class="fas fa-envelope me-2 text-warning"></i> privacidad@melodiasdelpasado.cr</li>
                     <li class="mb-2"><i class="fas fa-phone me-2 text-warning"></i> +506 2222-2222</li>
                     <li class="mb-2"><i class="fab fa-whatsapp me-2 text-warning"></i> +506 8888-8888</li>

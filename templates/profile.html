@@ -45,7 +45,6 @@
                 <form method="POST">
                     <div class="row g-3">
                         
-                        <!-- Mostrar Rol Informativo (Si no es cliente) -->
                         {% if current_user.role != 'cliente' %}
                         <div class="col-12">
                             <label class="form-label fw-bold text-primary">Perfil Corporativo</label>
@@ -245,7 +244,7 @@
                 </div>
             </div>
             
-        {% endif %} <!-- Fin IF Cliente -->
+        {% endif %}
 
     </div>
 </div>
@@ -260,6 +259,3 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endblock %}
-
-
-

@@ -2,7 +2,6 @@
 
 {% block content %}
 
-<!-- ESTILOS ESPECÍFICOS PARA EL BANNER -->
 <style>
     .hero-banner {
         /* Imagen de fondo */
@@ -83,7 +82,6 @@
 
 {% else %}
     <!-- VISTA DE CATALOGO -->
-
     <!-- TÍTULO DE SECCIÓN -->
     <div class="text-center mb-5">
         <h2 class="fw-bold">Nuestros Productos</h2>
@@ -103,12 +101,10 @@
                 </div>
                 
                 <div class="card-body text-center">
-                    <!-- Solo mostramos el Nombre -->
                     <h5 class="card-title fw-bold">{{ producto.nombre }}</h5>
                 </div>
                 
                 <div class="card-footer bg-white border-top-0 pb-4 text-center">
-                    <!-- Botón "Ver detalles" -->
                     <a href="{{ url_for('product_detail', id=producto.id) }}" class="btn btn-outline-dark w-75 rounded-pill">
                         Ver detalles
                     </a>

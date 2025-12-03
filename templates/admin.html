@@ -18,7 +18,7 @@
   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#inv">Inventario</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ords">Gestionar Pedidos</button></li>
   
-  <!-- Solo el Admin ve la pestaña Usuarios -->
+  <!-- USUARIOS VISIBLES PARA ADMINISTRADOR -->
   {% if current_user.role == 'admin' %}
       <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usrs">Usuarios</button></li>
   {% endif %}
@@ -181,7 +181,7 @@
       </table>
   </div>
 
-  <!-- === SECCIÓN 3: USUARIOS (SOLO ADMIN) === -->
+  <!-- === SECCIÓN 3: USUARIOS (SOLO ADMINISTRADOR) === -->
   {% if current_user.role == 'admin' %}
   <div class="tab-pane fade" id="usrs">
       
@@ -287,7 +287,7 @@
   </div>
   {% endif %}
 
-</div> <!-- Fin del tab-content -->
+</div> 
 
 <!-- SCRIPT PARA MANTENER LA PESTAÑA ACTIVA -->
 <script>
@@ -296,11 +296,8 @@ document.addEventListener("DOMContentLoaded", function() {
     var hash = window.location.hash;
     
     if (hash) {
-        // 2. Buscar el botón del menú que abre esa sección
-        // Busca un botón que tenga data-bs-target="#usrs"
         var triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
         
-        // 3. Si el botón existe, hacerle clic automáticamente
         if (triggerEl) {
             triggerEl.click();
         }

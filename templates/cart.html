@@ -10,11 +10,11 @@
             <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Ir a comprar</a>
         </div>
     {% else %}
-        <!-- INICIO FORMULARIO PRINCIPAL (Envuelve todo para mandar el pago) -->
+        <!-- INICIO FORMULARIO PRINCIPAL -->
         <form action="{{ url_for('checkout') }}" method="POST">
             
             <div class="row">
-                <!-- COLUMNA IZQUIERDA: LISTA DE PRODUCTOS -->
+                <!-- LISTA DE PRODUCTOS -->
                 <div class="col-lg-8">
                     <div class="card shadow-sm border-0 mb-3">
                         <div class="card-header bg-white fw-bold">Items en tu carrito</div>
@@ -43,7 +43,7 @@
                                             </div>
                                         </td>
                                         <td class="text-center">
-                                            <!-- LÓGICA DE ESTADO (Oculta cantidad exacta) -->
+                                            <!-- LÓGICA DE ESTADO -->
                                             {% if item.product.stock >= item.cantidad %}
                                                 <span class="badge bg-success">Disponible</span>
                                             {% else %}
@@ -67,7 +67,7 @@
                     </div>
                 </div>
 
-                <!-- COLUMNA DERECHA: RESUMEN Y PAGO -->
+                <!-- RESUMEN Y PAGO -->
                 <div class="col-lg-4">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-primary text-white">Resumen de Orden</div>
@@ -112,7 +112,6 @@
                                         No tienes tarjetas guardadas.
                                         <a href="{{ url_for('profile') }}#payment-methods" class="alert-link">Agregar una aquí</a>.
                                     </div>
-                                    <!-- Input oculto para que falle la validación si trata de enviar -->
                                     <input type="hidden" name="payment_method_id" required>
                                 {% endif %}
                             </div>
